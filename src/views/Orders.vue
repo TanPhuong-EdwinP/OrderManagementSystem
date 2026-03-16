@@ -1,5 +1,6 @@
 <template>
   <div class="container">
+
     <div class="page-header">
       <h1>Đơn hàng</h1>
       <button class="btn btn-primary" @click="openCreate">+ Tạo đơn hàng</button>
@@ -12,7 +13,7 @@
           <thead>
             <tr>
               <th style="width:60px">ID</th>
-              <th>Khách hàng</th>
+              <th>User ID</th>
               <th>Tổng tiền</th>
               <th>Trạng thái</th>
               <th>Ngày tạo</th>
@@ -20,31 +21,27 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="o in orders" :key="o.id || o.orderId">
-              <td style="color:#9aa0a6">#{{ o.id || o.orderId || '—' }}</td>
+            <tr v-for="o in orders" :key="o.id">
+              <td style="color:#9aa0a6">#{{ o.id }}</td>
+              <td>User #{{ o.userId }}</td>
+              <td style="font-weight:600;color:#1a73e8">{{ fmt(o.total) }}</td>
               <td>
-                <div style="font-weight:500">{{ o.customerName || o.userName || o.fullName || 'Khách lẻ' }}</div>
-                <div style="font-size:12px;color:#9aa0a6">{{ o.customerEmail || o.userEmail || '' }}</div>
-              </td>
-              <td style="font-weight:600;color:#1a73e8">
-                {{ fmt(o.totalAmount || o.totalPrice || o.total || 0) }}
-              </td>
-              <td>
-                <span :class="`badge badge-s${o.status}`">
-                  {{ STATUS_LABEL[o.status] ?? (o.statusName || o.status) }}
+                <span :class="`badge ${badgeClass(o.status)}`">
+                  {{ labelOf(o.status) }}
                 </span>
               </td>
               <td style="color:#9aa0a6;font-size:13px">
-                {{ fmtDate(o.createdAt || o.orderDate || o.updatedAt) }}
+                {{ o.createdAt ? fmtDate(o.createdAt) : '—' }}
               </td>
               <td>
                 <div style="display:flex;gap:6px;flex-wrap:wrap">
-                  <button class="btn btn-secondary btn-sm" @click="detail = o">Chi tiết</button>
+                  <button class="btn btn-secondary btn-sm"
+                    @click="detail = o">Chi tiết</button>
                   <button
-                    v-for="next in (NEXT_STATUS[o.status] || [])" :key="next"
-                    :class="`btn btn-sm btn-${NEXT_COLOR[next] || 'secondary'}`"
-                    @click="changeStatus(o.id || o.orderId, next)">
-                    {{ STATUS_LABEL[next] }}
+                    v-for="next in nextOf(o.status)" :key="next.val"
+                    :class="`btn btn-sm btn-${next.color}`"
+                    @click="doStatus(o.id, next.val)">
+                    {{ next.label }}
                   </button>
                 </div>
               </td>
@@ -57,75 +54,191 @@
       </div>
     </div>
 
-    <div v-if="detail" class="modal-overlay" @click.self="detail = null">
-      <div class="modal" style="width:560px">
-        <div class="modal-title">Đơn hàng #{{ detail.id || detail.orderId }}</div>
-        <div class="grid-2" style="margin-bottom:16px;font-size:13.5px">
-          <div><span style="color:#9aa0a6">Khách hàng:</span> <strong>{{ detail.customerName || detail.userName || '—' }}</strong></div>
-          <div><span style="color:#9aa0a6">Trạng thái:</span> <span :class="`badge badge-s${detail.status}`">{{ STATUS_LABEL[detail.status] }}</span></div>
+    <!-- Modal tạo đơn -->
+    <div v-if="showCreate" class="modal-overlay" @click.self="showCreate = false">
+      <div class="modal">
+        <div class="modal-title">Tạo đơn hàng mới</div>
+
+        <div class="form-group">
+          <label>User ID *</label>
+          <input class="form-control" v-model.number="cForm.userId"
+            type="number" min="1" placeholder="Nhập ID người dùng" />
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Sản phẩm</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in (detail.orderItems || detail.items || [])" :key="item.id">
-                <td>{{ item.productName || (item.product ? item.product.name : 'Sản phẩm') }}</td>
-                <td>{{ item.quantity }}</td>
-                <td>{{ fmt(item.price || item.unitPrice || 0) }}</td>
-                <td>{{ fmt((item.price || item.unitPrice || 0) * item.quantity) }}</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="form-group">
+          <label>Tổng tiền (VNĐ) *</label>
+          <input class="form-control" v-model.number="cForm.total"
+            type="number" min="0" />
         </div>
-        <div class="modal-footer"><button class="btn btn-secondary" @click="detail = null">Đóng</button></div>
+
+        <div v-if="cError" class="alert alert-error">{{ cError }}</div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="showCreate = false">Hủy</button>
+          <button class="btn btn-primary" :disabled="submitting" @click="submitOrder">
+            {{ submitting ? 'Đang tạo…' : 'Tạo đơn hàng' }}
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Modal chi tiết -->
+    <div v-if="detail" class="modal-overlay" @click.self="detail = null">
+      <div class="modal">
+        <div class="modal-title">Chi tiết đơn hàng #{{ detail.id }}</div>
+        <table style="width:100%;font-size:14px;margin-bottom:16px">
+          <tr>
+            <td style="color:#9aa0a6;padding:7px 0;width:120px">ID</td>
+            <td><strong>#{{ detail.id }}</strong></td>
+          </tr>
+          <tr>
+            <td style="color:#9aa0a6;padding:7px 0">User ID</td>
+            <td>{{ detail.userId }}</td>
+          </tr>
+          <tr>
+            <td style="color:#9aa0a6;padding:7px 0">Tổng tiền</td>
+            <td style="font-weight:600;color:#1a73e8">{{ fmt(detail.total) }}</td>
+          </tr>
+          <tr>
+            <td style="color:#9aa0a6;padding:7px 0">Trạng thái</td>
+            <td>
+              <span :class="`badge ${badgeClass(detail.status)}`">
+                {{ labelOf(detail.status) }}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:#9aa0a6;padding:7px 0">Ngày tạo</td>
+            <td>{{ detail.createdAt ? fmtDate(detail.createdAt) : '—' }}</td>
+          </tr>
+        </table>
+
+        <!-- Đổi trạng thái ngay trong modal chi tiết -->
+        <div v-if="nextOf(detail.status).length > 0">
+          <div style="font-size:13px;color:#5f6368;margin-bottom:8px">
+            Chuyển trạng thái:
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button
+              v-for="next in nextOf(detail.status)" :key="next.val"
+              :class="`btn btn-${next.color}`"
+              @click="doStatusFromDetail(detail.id, next.val)">
+              {{ next.label }}
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="detail = null">Đóng</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { orderApi, productApi } from '../services/api.js'
+import { ref, onMounted } from 'vue'
+import { orderApi } from '../services/api.js'
 
-const orders      = ref([])
-const loading     = ref(true)
-const detail      = ref(null)
+const orders     = ref([])
+const loading    = ref(true)
+const showCreate = ref(false)
+const detail     = ref(null)
+const submitting = ref(false)
+const cError     = ref('')
 
-const STATUS_LABEL = { 0: 'Chờ xác nhận', 1: 'Đã xác nhận', 2: 'Đang giao', 3: 'Đã giao', 4: 'Đã hủy' }
-const NEXT_STATUS  = { 0: [1, 4], 1: [2], 2: [3] }
-const NEXT_COLOR   = { 1: 'primary', 2: 'success', 3: 'success', 4: 'danger' }
+// ✅ CreateOrderDto: { userId, total }
+const cForm = ref({ userId: '', total: 0 })
+
+// ✅ Status là string theo OrderDto.Status
+const LABELS = {
+  Pending:   'Chờ xác nhận',
+  Confirmed: 'Đã xác nhận',
+  Shipped:   'Đang giao',
+  Delivered: 'Đã giao',
+  Cancelled: 'Đã hủy'
+}
+const BADGES = {
+  Pending:   'badge-warning',
+  Confirmed: 'badge-info',
+  Shipped:   'badge-ok',
+  Delivered: 'badge-ok',
+  Cancelled: 'badge-danger'
+}
+// State Machine: từ trạng thái hiện tại → các trạng thái tiếp theo
+const NEXTS = {
+  Pending:   [
+    { val: 'Confirmed', label: 'Xác nhận',  color: 'primary' },
+    { val: 'Cancelled', label: 'Hủy đơn',   color: 'danger'  }
+  ],
+  Confirmed: [{ val: 'Shipped',   label: 'Giao hàng', color: 'success' }],
+  Shipped:   [{ val: 'Delivered', label: 'Đã giao',   color: 'success' }]
+}
+
+const labelOf  = s => LABELS[s] ?? s
+const badgeClass = s => BADGES[s] ?? 'badge-info'
+const nextOf   = s => NEXTS[s] ?? []
 
 async function load() {
   loading.value = true
   try {
     const { data } = await orderApi.getAll()
-    console.log("Dữ liệu thực tế từ Backend:", data) // Kiểm tra tên biến tại đây
-    orders.value = data
+    orders.value = Array.isArray(data) ? data : []
   } catch (e) {
-    console.error("Lỗi tải đơn hàng:", e)
+    console.error('Load orders error:', e)
   } finally { loading.value = false }
 }
 
-async function changeStatus(id, status) {
-  if (!confirm(`Chuyển sang "${STATUS_LABEL[status]}"?`)) return
+function openCreate() {
+  cForm.value  = { userId: '', total: 0 }
+  cError.value = ''
+  showCreate.value = true
+}
+
+async function submitOrder() {
+  if (!cForm.value.userId || cForm.value.userId < 1) {
+    cError.value = 'Vui lòng nhập User ID hợp lệ (số nguyên > 0).'
+    return
+  }
+  cError.value     = ''
+  submitting.value = true
   try {
+    // ✅ Gửi đúng { userId, total } theo CreateOrderDto
+    await orderApi.create({
+      userId: Number(cForm.value.userId),
+      total:  Number(cForm.value.total)
+    })
+    showCreate.value = false
+    await load()
+  } catch (e) {
+    const d = e.response?.data
+    cError.value = d?.message || d?.title || `Lỗi ${e.response?.status}`
+  } finally { submitting.value = false }
+}
+
+async function doStatus(id, status) {
+  if (!confirm(`Chuyển sang "${labelOf(status)}"?`)) return
+  try {
+    // ✅ Gửi { status } string theo UpdateOrderStatusDto
     await orderApi.updateStatus(id, status)
     await load()
-  } catch (e) { alert('Lỗi cập nhật trạng thái.') }
+  } catch (e) {
+    alert('Lỗi: ' + (e.response?.data?.message || e.message))
+  }
 }
 
-const fmt = v => {
-  if (v === undefined || v === null || isNaN(v)) return '0 ₫';
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v)
+async function doStatusFromDetail(id, status) {
+  if (!confirm(`Chuyển sang "${labelOf(status)}"?`)) return
+  try {
+    await orderApi.updateStatus(id, status)
+    detail.value = null
+    await load()
+  } catch (e) {
+    alert('Lỗi: ' + (e.response?.data?.message || e.message))
+  }
 }
 
-const fmtDate = d => {
-  if (!d) return '—';
-  const date = new Date(d);
-  return isNaN(date.getTime()) ? 'Ngày lỗi' : date.toLocaleDateString('vi-VN');
-}
+const fmt     = v => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v)
+const fmtDate = d => new Date(d).toLocaleDateString('vi-VN')
 
 onMounted(load)
 </script>

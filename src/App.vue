@@ -23,9 +23,9 @@
   background: #fff; border-bottom: 1px solid #e8eaed;
   position: fixed; top: 0; left: 0; right: 0; z-index: 200;
 }
-.brand     { font-size: 15px; font-weight: 700; color: #1a73e8; }
+.brand { font-size: 15px; font-weight: 700; color: #1a73e8; }
 .nav-links { display: flex; gap: 4px; }
-.nav-link  {
+.nav-link {
   padding: 7px 14px; border-radius: 7px;
   text-decoration: none; color: #5f6368;
   font-size: 13.5px; font-weight: 500;

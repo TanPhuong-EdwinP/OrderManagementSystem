@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Order_Management_System.Services.Interfaces;
-using Order_Management_System.Serviecs; // Lưu ý check lại chính tả namespace này (Services hay Serviecs)
+using Order_Management_System.Services; 
 using Order_Management_System.Data;
 using Order_Management_System.Middlewares;
 using Order_Management_System.Services;
@@ -20,8 +20,8 @@ namespace Order_Management_System
                 {
                     policy.WithOrigins("http://localhost:5173") // Port mặc định của Vite/Vue
                           .AllowAnyMethod()
-                          .AllowAnyHeader()
-                          .AllowCredentials();
+                          .AllowAnyHeader();
+                          
                 });
             });
 

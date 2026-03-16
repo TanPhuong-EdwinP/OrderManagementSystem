@@ -113,3 +113,4 @@ C:\Users\tanph\OneDrive\Desktop\CV\Order Management System\Order Management Syst
 C:\Users\tanph\OneDrive\Desktop\CV\Order Management System\Order Management System\bin\Debug\net8.0\Microsoft.Extensions.Logging.Abstractions.dll
 C:\Users\tanph\OneDrive\Desktop\CV\Order Management System\Order Management System\bin\Debug\net8.0\Microsoft.Extensions.Options.dll
 C:\Users\tanph\OneDrive\Desktop\CV\Order Management System\Order Management System\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+C:\Users\tanph\OneDrive\Desktop\CV\Order Management System\Order Management System\obj\Debug\net8.0\Order Management System.sourcelink.json

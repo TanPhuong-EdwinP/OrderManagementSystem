@@ -4,7 +4,7 @@ using Order_Management_System.Data;
 using Order_Management_System.DTOs.Order;
 using Order_Management_System.Models;
 
-namespace Order_Management_System.Serviecs; // Bạn lưu ý namespace bị viết sai chính tả (Serviecs -> Services) nếu cần sửa nhé
+namespace Order_Management_System.Services; 
 
 public class OrderService : IOrderService
 {

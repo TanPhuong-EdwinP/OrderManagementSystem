@@ -13,10 +13,10 @@ public class Order
     public OrderStatus Status { get; set; } = OrderStatus.Pending;
     public decimal TotalAmount { get; set; }
     public string? Note { get; set; }
+    public string ShippingName { get; set; } 
+    public string ShippingPhone { get; set; }
     public string? ShippingAddress { get; set; }
-
-    // ✅ Không gán = DateTime.UtcNow ở đây
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 
     public int UserId { get; set; }

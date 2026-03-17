@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Order_Management_System.DTOs.Product;
 using Order_Management_System.Services.Interfaces;
 
@@ -8,45 +9,40 @@ namespace Order_Management_System.Controllers;
 [Route("api/products")]
 public class ProductsController : ControllerBase
 {
-    private readonly IProductService _productService;
-
-    public ProductsController(IProductService productService)
-    {
-        _productService = productService;
-    }
+    private readonly IProductService _service;
+    public ProductsController(IProductService service) => _service = service;
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
-    {
-        var products = await _productService.GetAll();
-        return Ok(products);
-    }
+    public async Task<IActionResult> GetAll() => Ok(await _service.GetAll());
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var product = await _productService.GetById(id);
-        return Ok(product);
+        var p = await _service.GetById(id);
+        return p == null ? NotFound() : Ok(p);
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(CreateProductDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create([FromBody] CreateProductDto dto)
     {
-        var product = await _productService.Create(dto);
-        return Ok(product);
+        var p = await _service.Create(dto);
+        return Ok(p);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, UpdateProductDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateProductDto dto)
     {
-        var product = await _productService.Update(id, dto);
-        return Ok(product);
+        var p = await _service.Update(id, dto);
+        return p == null ? NotFound() : Ok(p);
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
-        await _productService.Delete(id);
+        await _service.Delete(id);
         return Ok("Deleted");
     }
 }

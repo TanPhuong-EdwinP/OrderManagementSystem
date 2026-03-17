@@ -1,9 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Order_Management_System.Services.Interfaces;
-using Order_Management_System.Services; 
+﻿using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Order_Management_System.Data;
 using Order_Management_System.Middlewares;
 using Order_Management_System.Services;
+using Order_Management_System.Services.Interfaces;
 
 namespace Order_Management_System
 {
@@ -13,60 +15,97 @@ namespace Order_Management_System
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // 1. CẤU HÌNH CORS: Cho phép Frontend (VueJS) truy cập API
+            // 1. CORS
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowVueApp", policy =>
                 {
-                    policy.WithOrigins("http://localhost:5173") // Port mặc định của Vite/Vue
+                    policy.WithOrigins("http://localhost:5173")
                           .AllowAnyMethod()
                           .AllowAnyHeader();
-                          
                 });
             });
 
-            // Add Controllers
+            // 2. Controllers + Swagger
             builder.Services.AddControllers();
-
-            // Swagger/OpenAPI
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                // Thêm nút Authorize trong Swagger để test JWT
+                c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                    Description = "Nhập token: Bearer {token}"
+                });
+                c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+                {
+                    {
+                        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                        {
+                            Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                            {
+                                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                                Id   = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+            });
 
-            // 2. DATABASE: Kết nối MySQL Docker
+            // 3. Database
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseMySql(
-                    connectionString,
-                    ServerVersion.AutoDetect(connectionString)
-                ));
+                options.UseMySql(connectionString,
+                    ServerVersion.AutoDetect(connectionString)));
 
-            // 3. DEPENDENCY INJECTION: Đăng ký các Service
+            // 4. ✅ JWT Authentication
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                        ValidAudience = builder.Configuration["Jwt:Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                    };
+                });
+
+            builder.Services.AddAuthorization();
+
+            // 5. Dependency Injection
             builder.Services.AddScoped<IProductService, ProductService>();
             builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IReportService, ReportService>();
+            // Thêm 2 dòng này vào phần DI
+            builder.Services.AddScoped<ICartService, CartService>();
+            builder.Services.AddScoped<IUserService, UserService>();
 
             var app = builder.Build();
-
-            // 4. MIDDLEWARE: Xử lý lỗi toàn cục (Nên đặt đầu tiên)
             app.UseMiddleware<GlobalExceptionMiddleware>();
 
-            // 5. SWAGGER: Chỉ chạy trong môi trường Development
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
-            // 6. KÍCH HOẠT CORS: Phải đặt TRƯỚC HttpsRedirection và Authorization
             app.UseCors("AllowVueApp");
 
-            app.UseHttpsRedirection();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
-
             app.Run();
         }
     }

@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
-
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Order_Management_System.Services.Interfaces;
 
 namespace Order_Management_System.Controllers;
 
 [ApiController]
 [Route("api/reports")]
+[Authorize(Roles = "Admin")]   
 public class ReportsController : ControllerBase
 {
     private readonly IReportService _reportService;
@@ -18,14 +19,14 @@ public class ReportsController : ControllerBase
     [HttpGet("revenue")]
     public async Task<IActionResult> GetRevenue()
     {
-        var report = await _reportService.GetRevenue();
-        return Ok(report);
+        var result = await _reportService.GetRevenue();
+        return Ok(result);
     }
 
     [HttpGet("top-products")]
     public async Task<IActionResult> GetTopProducts()
     {
-        var products = await _reportService.GetTopProducts();
-        return Ok(products);
+        var result = await _reportService.GetTopProducts();
+        return Ok(result);
     }
 }

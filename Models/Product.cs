@@ -11,8 +11,6 @@ public class Product
     public int StockQuantity { get; set; }
     public int LowStockThreshold { get; set; } = 10;
     public bool IsActive { get; set; } = true;
-
-    // ✅ Không gán = DateTime.UtcNow ở đây
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 

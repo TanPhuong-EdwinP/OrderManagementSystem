@@ -1,45 +1,38 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Order_Management_System.Services.Interfaces;
 using Order_Management_System.Data;
 using Order_Management_System.DTOs.Order;
 using Order_Management_System.Models;
+using Order_Management_System.Services.Interfaces;
 
-namespace Order_Management_System.Services; 
+namespace Order_Management_System.Services;
 
 public class OrderService : IOrderService
 {
-    private readonly AppDbContext _context;
-
-    public OrderService(AppDbContext context)
-    {
-        _context = context;
-    }
+    private readonly AppDbContext _db;
+    public OrderService(AppDbContext db) => _db = db;
 
     public async Task<List<OrderDto>> GetAll()
     {
-        return await _context.Orders
-            .Select(o => new OrderDto
-            {
-                Id = o.Id,
-                // FIX: Sửa .Total thành .TotalAmount theo Model của bạn
-                Total = o.TotalAmount,
-                Status = o.Status.ToString()
-            }).ToListAsync();
+        return await _db.Orders
+            .Include(o => o.OrderItems).ThenInclude(i => i.Product)
+            .Select(o => MapDto(o)).ToListAsync();
+    }
+
+    public async Task<List<OrderDto>> GetByUserId(int userId)
+    {
+        return await _db.Orders
+            .Include(o => o.OrderItems).ThenInclude(i => i.Product)
+            .Where(o => o.UserId == userId)
+            .OrderByDescending(o => o.CreatedAt)
+            .Select(o => MapDto(o)).ToListAsync();
     }
 
     public async Task<OrderDto?> GetById(int id)
     {
-        var order = await _context.Orders.FindAsync(id);
-
-        if (order == null) return null;
-
-        return new OrderDto
-        {
-            Id = order.Id,
-            // FIX: Sửa .Total thành .TotalAmount
-            Total = order.TotalAmount,
-            Status = order.Status.ToString()
-        };
+        var o = await _db.Orders
+            .Include(o => o.OrderItems).ThenInclude(i => i.Product)
+            .FirstOrDefaultAsync(o => o.Id == id);
+        return o == null ? null : MapDto(o);
     }
 
     public async Task<OrderDto> Create(CreateOrderDto dto)
@@ -47,42 +40,80 @@ public class OrderService : IOrderService
         var order = new Order
         {
             UserId = dto.UserId,
-            // FIX: Sửa .Total thành .TotalAmount
             TotalAmount = dto.Total,
-            // FIX: Gán Enum trực tiếp thay vì dùng chuỗi "pending"
+            ShippingAddress = dto.ShippingAddress,
+            Note = dto.Note,
             Status = OrderStatus.Pending
         };
 
-        _context.Orders.Add(order);
-        await _context.SaveChangesAsync();
-
-        return new OrderDto
+        // Tạo OrderItems nếu có
+        if (dto.Items != null && dto.Items.Any())
         {
-            Id = order.Id,
-            Total = order.TotalAmount,
-            Status = order.Status.ToString()
-        };
+            decimal total = 0;
+            foreach (var item in dto.Items)
+            {
+                var product = await _db.Products.FindAsync(item.ProductId)
+                    ?? throw new Exception($"Sản phẩm ID {item.ProductId} không tồn tại.");
+                if (product.StockQuantity < item.Quantity)
+                    throw new Exception($"Sản phẩm '{product.Name}' không đủ hàng.");
+
+                product.StockQuantity -= item.Quantity;
+                total += product.Price * item.Quantity;
+
+                order.OrderItems.Add(new OrderItem
+                {
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    Price = product.Price
+                });
+            }
+            order.TotalAmount = total;
+        }
+
+        _db.Orders.Add(order);
+        await _db.SaveChangesAsync();
+        return (await GetById(order.Id))!;
     }
 
     public async Task<OrderDto?> UpdateStatus(int id, UpdateOrderStatusDto dto)
     {
-        var order = await _context.Orders.FindAsync(id);
-
+        var order = await _db.Orders.FindAsync(id);
         if (order == null) return null;
-
-        // FIX: Chuyển đổi từ string (dto.Status) sang Enum (order.Status)
-        if (Enum.TryParse<OrderStatus>(dto.Status, true, out var newStatus))
-        {
-            order.Status = newStatus;
-        }
-
-        await _context.SaveChangesAsync();
-
-        return new OrderDto
-        {
-            Id = order.Id,
-            Total = order.TotalAmount,
-            Status = order.Status.ToString()
-        };
+        if (Enum.TryParse<OrderStatus>(dto.Status, true, out var s))
+            order.Status = s;
+        await _db.SaveChangesAsync();
+        return await GetById(id);
     }
+
+    // ✅ Hủy đơn — chỉ được khi Pending hoặc Confirmed
+    public async Task<bool> CancelOrder(int orderId, int userId)
+    {
+        var order = await _db.Orders.FindAsync(orderId);
+        if (order == null || order.UserId != userId) return false;
+        if (order.Status != OrderStatus.Pending && order.Status != OrderStatus.Confirmed)
+            throw new Exception("Chỉ có thể hủy đơn khi đang ở trạng thái Chờ xác nhận hoặc Đã xác nhận.");
+
+        order.Status = OrderStatus.Cancelled;
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    private static OrderDto MapDto(Order o) => new()
+    {
+        Id = o.Id,
+        UserId = o.UserId,
+        Total = o.TotalAmount,
+        Status = o.Status.ToString(),
+        ShippingAddress = o.ShippingAddress,
+        Note = o.Note,
+        CreatedAt = o.CreatedAt,
+        Items = o.OrderItems.Select(i => new OrderItemDetailDto
+        {
+            ProductId = i.ProductId,
+            ProductName = i.Product?.Name ?? "",
+            Quantity = i.Quantity,
+            Price = i.Price,
+            Subtotal = i.Price * i.Quantity
+        }).ToList()
+    };
 }

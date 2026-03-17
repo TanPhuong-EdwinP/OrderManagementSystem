@@ -22,6 +22,37 @@ namespace Order_Management_System.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("Order_Management_System.Models.CartItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("NOW(6)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("CartItems");
+                });
+
             modelBuilder.Entity("Order_Management_System.Models.Category", b =>
                 {
                     b.Property<int>("Id")
@@ -90,6 +121,14 @@ namespace Order_Management_System.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("ShippingAddress")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ShippingName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ShippingPhone")
+                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<int>("Status")
@@ -190,9 +229,9 @@ namespace Order_Management_System.Migrations
                             Id = 1,
                             CategoryId = 1,
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Nước khoáng 500ml",
+                            Description = "Nước khoáng thiên nhiên 500ml",
                             IsActive = true,
-                            LowStockThreshold = 10,
+                            LowStockThreshold = 50,
                             Name = "La Vie 500ml",
                             Price = 6000m,
                             StockQuantity = 500
@@ -202,9 +241,9 @@ namespace Order_Management_System.Migrations
                             Id = 2,
                             CategoryId = 1,
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Nước khoáng 1.5L",
+                            Description = "Nước khoáng thiên nhiên 1.5L",
                             IsActive = true,
-                            LowStockThreshold = 10,
+                            LowStockThreshold = 30,
                             Name = "La Vie 1.5L",
                             Price = 12000m,
                             StockQuantity = 300
@@ -214,36 +253,60 @@ namespace Order_Management_System.Migrations
                             Id = 3,
                             CategoryId = 1,
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Bình nước 19L",
+                            Description = "Bình nước khoáng 19L",
                             IsActive = true,
                             LowStockThreshold = 10,
                             Name = "La Vie 19L",
                             Price = 65000m,
-                            StockQuantity = 8
+                            StockQuantity = 50
                         },
                         new
                         {
                             Id = 4,
                             CategoryId = 2,
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Nước tinh khiết",
+                            Description = "Nước tinh khiết 500ml",
                             IsActive = true,
-                            LowStockThreshold = 10,
-                            Name = "Tinh khiết 350ml",
-                            Price = 4000m,
-                            StockQuantity = 1000
+                            LowStockThreshold = 50,
+                            Name = "Aquafina 500ml",
+                            Price = 6000m,
+                            StockQuantity = 500
                         },
                         new
                         {
                             Id = 5,
+                            CategoryId = 2,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Description = "Nước tinh khiết 1.5L",
+                            IsActive = true,
+                            LowStockThreshold = 30,
+                            Name = "Aquafina 1.5L",
+                            Price = 11000m,
+                            StockQuantity = 300
+                        },
+                        new
+                        {
+                            Id = 6,
                             CategoryId = 3,
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Nước khoáng có gas",
+                            Description = "Nước khoáng có gas 330ml",
+                            IsActive = true,
+                            LowStockThreshold = 20,
+                            Name = "Perrier 330ml",
+                            Price = 25000m,
+                            StockQuantity = 200
+                        },
+                        new
+                        {
+                            Id = 7,
+                            CategoryId = 2,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Description = "Bình nước tinh khiết 20L",
                             IsActive = true,
                             LowStockThreshold = 10,
-                            Name = "Sparkling 330ml",
-                            Price = 15000m,
-                            StockQuantity = 200
+                            Name = "Bình Aquafina 20L",
+                            Price = 60000m,
+                            StockQuantity = 80
                         });
                 });
 
@@ -254,6 +317,10 @@ namespace Order_Management_System.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -272,6 +339,10 @@ namespace Order_Management_System.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<int>("Role")
                         .HasColumnType("int");
 
@@ -283,12 +354,44 @@ namespace Order_Management_System.Migrations
                         new
                         {
                             Id = 1,
+                            Address = "TP. Hồ Chí Minh",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Email = "admin@mineralwater.com",
+                            Email = "admin@gmail.com",
                             FullName = "Administrator",
-                            PasswordHash = "$2a$11$Tq.17hDcvvmtgzy2pzy/puldzy6OMSQ6pIZja5s2.xDXsuFgt/Eaa",
+                            PasswordHash = "$2a$11$QGSI0smz6bytTmAdNDTyG.sd2SsqjCaa0UekhMsyyGp5pNYfb7a9.",
+                            Phone = "0900000000",
                             Role = 0
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Address = "123 Nguyễn Huệ, Q.1, TP.HCM",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "user@gmail.com",
+                            FullName = "Nguyễn Quốc Huy",
+                            PasswordHash = "$2a$11$9CHLbBtDN1XAEJjaUjiwqePwvqJIwqzUy3UDSldFEwaih1YMFa9Le",
+                            Phone = "0901234567",
+                            Role = 1
                         });
+                });
+
+            modelBuilder.Entity("Order_Management_System.Models.CartItem", b =>
+                {
+                    b.HasOne("Order_Management_System.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Order_Management_System.Models.User", "User")
+                        .WithMany("CartItems")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Order_Management_System.Models.Order", b =>
@@ -310,11 +413,13 @@ namespace Order_Management_System.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Order_Management_System.Models.Product", null)
+                    b.HasOne("Order_Management_System.Models.Product", "Product")
                         .WithMany("OrderItems")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Order_Management_System.Models.Product", b =>
@@ -340,6 +445,8 @@ namespace Order_Management_System.Migrations
 
             modelBuilder.Entity("Order_Management_System.Models.User", b =>
                 {
+                    b.Navigation("CartItems");
+
                     b.Navigation("Orders");
                 });
 #pragma warning restore 612, 618

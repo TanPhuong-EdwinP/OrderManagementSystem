@@ -19,17 +19,25 @@ public class ProductService : IProductService
     public async Task<List<ProductDto>> GetAll()
     {
         return await _context.Products
+            .Include(p => p.Category)
             .Select(p => new ProductDto
             {
                 Id = p.Id,
                 Name = p.Name,
-                Price = p.Price
+                Description = p.Description,
+                Price = p.Price,
+                StockQuantity = p.StockQuantity,
+                IsActive = p.IsActive,
+                CategoryId = p.CategoryId,
+                CategoryName = p.Category.Name
             }).ToListAsync();
     }
 
     public async Task<ProductDto?> GetById(int id)
     {
-        var p = await _context.Products.FindAsync(id);
+        var p = await _context.Products
+            .Include(p => p.Category)
+            .FirstOrDefaultAsync(p => p.Id == id);
 
         if (p == null) return null;
 
@@ -37,7 +45,12 @@ public class ProductService : IProductService
         {
             Id = p.Id,
             Name = p.Name,
-            Price = p.Price
+            Description = p.Description,
+            Price = p.Price,
+            StockQuantity = p.StockQuantity,
+            IsActive = p.IsActive,
+            CategoryId = p.CategoryId,
+            CategoryName = p.Category.Name
         };
     }
 
@@ -48,7 +61,8 @@ public class ProductService : IProductService
             Name = dto.Name,
             Price = dto.Price,
             StockQuantity = dto.Stock,
-            CategoryId = dto.CategoryId
+            CategoryId = dto.CategoryId,
+            CreatedAt = DateTime.UtcNow
         };
 
         _context.Products.Add(product);
@@ -58,7 +72,10 @@ public class ProductService : IProductService
         {
             Id = product.Id,
             Name = product.Name,
-            Price = product.Price
+            Price = product.Price,
+            StockQuantity = product.StockQuantity,
+            IsActive = product.IsActive,
+            CategoryId = product.CategoryId
         };
     }
 
@@ -78,7 +95,10 @@ public class ProductService : IProductService
         {
             Id = product.Id,
             Name = product.Name,
-            Price = product.Price
+            Price = product.Price,
+            StockQuantity = product.StockQuantity,
+            IsActive = product.IsActive,
+            CategoryId = product.CategoryId
         };
     }
 

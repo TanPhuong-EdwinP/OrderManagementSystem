@@ -2,6 +2,7 @@
 using Order_Management_System.Services.Interfaces;
 using Order_Management_System.Data;
 using Order_Management_System.DTOs.Report;
+using Order_Management_System.Models;
 
 
 namespace Order_Management_System.Services;
@@ -17,7 +18,11 @@ public class ReportService : IReportService
 
     public async Task<RevenueReportDto> GetRevenue()
     {
-        var total = await _context.Orders.SumAsync(o => o.TotalAmount);
+        var validStatuses = new[] { OrderStatus.Shipped, OrderStatus.Delivered };
+
+        var total = await _context.Orders
+            .Where(o => validStatuses.Contains(o.Status))
+            .SumAsync(o => o.TotalAmount);
 
         return new RevenueReportDto
         {
@@ -27,7 +32,11 @@ public class ReportService : IReportService
 
     public async Task<List<TopProductDto>> GetTopProducts()
     {
+        var validStatuses = new[] { OrderStatus.Shipped, OrderStatus.Delivered };
+
         var result = await _context.OrderItems
+            .Include(x => x.Order)
+            .Where(x => validStatuses.Contains(x.Order.Status))
             .GroupBy(x => x.ProductId)
             .Select(g => new TopProductDto
             {

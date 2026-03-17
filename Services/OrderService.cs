@@ -40,20 +40,23 @@ public class OrderService : IOrderService
         var order = new Order
         {
             UserId = dto.UserId,
-            TotalAmount = dto.Total,
+            ShippingName = dto.ShippingName,
+            ShippingPhone = dto.ShippingPhone,
             ShippingAddress = dto.ShippingAddress,
             Note = dto.Note,
-            Status = OrderStatus.Pending
+            Status = OrderStatus.Pending,
+            TotalAmount = dto.Total
         };
 
-        // Tạo OrderItems nếu có
         if (dto.Items != null && dto.Items.Any())
         {
             decimal total = 0;
+
             foreach (var item in dto.Items)
             {
                 var product = await _db.Products.FindAsync(item.ProductId)
                     ?? throw new Exception($"Sản phẩm ID {item.ProductId} không tồn tại.");
+
                 if (product.StockQuantity < item.Quantity)
                     throw new Exception($"Sản phẩm '{product.Name}' không đủ hàng.");
 
@@ -67,11 +70,13 @@ public class OrderService : IOrderService
                     Price = product.Price
                 });
             }
+
             order.TotalAmount = total;
         }
 
         _db.Orders.Add(order);
         await _db.SaveChangesAsync();
+
         return (await GetById(order.Id))!;
     }
 
@@ -88,12 +93,24 @@ public class OrderService : IOrderService
     // ✅ Hủy đơn — chỉ được khi Pending hoặc Confirmed
     public async Task<bool> CancelOrder(int orderId, int userId)
     {
-        var order = await _db.Orders.FindAsync(orderId);
+        var order = await _db.Orders
+            .Include(o => o.OrderItems)
+            .FirstOrDefaultAsync(o => o.Id == orderId);
+
         if (order == null || order.UserId != userId) return false;
         if (order.Status != OrderStatus.Pending && order.Status != OrderStatus.Confirmed)
             throw new Exception("Chỉ có thể hủy đơn khi đang ở trạng thái Chờ xác nhận hoặc Đã xác nhận.");
 
+        // ✅ Hoàn lại tồn kho cho từng sản phẩm
+        foreach (var item in order.OrderItems)
+        {
+            var product = await _db.Products.FindAsync(item.ProductId);
+            if (product != null)
+                product.StockQuantity += item.Quantity;
+        }
+
         order.Status = OrderStatus.Cancelled;
+        order.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         return true;
     }
@@ -104,6 +121,8 @@ public class OrderService : IOrderService
         UserId = o.UserId,
         Total = o.TotalAmount,
         Status = o.Status.ToString(),
+        ShippingName = o.ShippingName,
+        ShippingPhone = o.ShippingPhone,
         ShippingAddress = o.ShippingAddress,
         Note = o.Note,
         CreatedAt = o.CreatedAt,

@@ -5,13 +5,6 @@ using Order_Management_System.DTOs.Order;
 using Order_Management_System.Models;
 using Order_Management_System.Services.Interfaces;
 
-
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Order_Management_System.DTOs.Order;
-using Order_Management_System.Services.Interfaces;
-
 namespace Order_Management_System.Controllers;
 
 [ApiController]
@@ -44,6 +37,7 @@ public class OrdersController : ControllerBase
     {
         try
         {
+            dto.UserId = UserId;
             var order = await _orderService.Create(dto);
             return Ok(order);
         }

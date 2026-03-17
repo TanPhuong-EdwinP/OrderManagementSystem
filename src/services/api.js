@@ -29,11 +29,12 @@ export const authApi = {
 }
 
 export const productApi = {
-  getAll:  ()         => api.get('/products'),
-  getById: id         => api.get(`/products/${id}`),
-  create:  data       => api.post('/products', data),
-  update:  (id, data) => api.put(`/products/${id}`, data),
-  delete:  id         => api.delete(`/products/${id}`)
+  getAll:      ()         => api.get('/products'),
+  getById:     id         => api.get(`/products/${id}`),
+  create:      data       => api.post('/products', data),
+  update:      (id, data) => api.put(`/products/${id}`, data),
+  delete:      id         => api.delete(`/products/${id}`),
+  getLowStock: ()         => api.get('/products/low-stock')
 }
 
 export const cartApi = {
@@ -54,12 +55,22 @@ export const orderApi = {
 
 export const userApi = {
   getProfile:    ()    => api.get('/users/profile'),
-  updateProfile: data  => api.put('/users/profile', data)
+  updateProfile: data  => api.put('/users/profile', data),
+  // Admin — quản lý khách hàng
+  getAllUsers:    ()    => api.get('/users'),
+  toggleLock:    id    => api.put(`/users/${id}/toggle-lock`)
+}
+
+export const adminApi = {
+  getAll: ()     => api.get('/admins'),
+  create: data   => api.post('/admins', data),
+  delete: id     => api.delete(`/admins/${id}`)
 }
 
 export const reportApi = {
-  getRevenue:     () => api.get('/reports/revenue'),
-  getTopProducts: () => api.get('/reports/top-products')
+  getDashboardStats: () => api.get('/reports/dashboard'),
+  getRevenue:        () => api.get('/reports/revenue'),
+  getTopProducts:    () => api.get('/reports/top-products')
 }
 
 export default api

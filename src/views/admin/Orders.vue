@@ -4,6 +4,17 @@
       <h1>Đơn hàng</h1>
       <button class="btn btn-primary" @click="openCreate">+ Tạo đơn hàng</button>
     </div>
+  <div class="status-filter" style="margin:16px 0;display:flex;gap:8px;flex-wrap:wrap">
+    <button 
+      v-for="status in ['All', 'Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled']"
+      :key="status"
+      class="btn btn-sm"
+      :class="{ 'btn-primary': activeStatus === status, 'btn-secondary': activeStatus !== status }"
+      @click="activeStatus = status"
+    >
+      {{ status === 'All' ? 'Tất cả' : labelOf(status) }}
+    </button>
+  </div>
 
     <div class="card">
       <div v-if="loading" class="loading-text">Đang tải…</div>
@@ -20,7 +31,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="o in orders" :key="o.id">
+            <tr v-for="o in filteredOrders" :key="o.id">
               <td style="color:#9aa0a6">#{{ o.id }}</td>
               <td>User #{{ o.userId }}</td>
               <td style="font-weight:600;color:#1a73e8">{{ fmt(o.total) }}</td>
@@ -47,8 +58,10 @@
                 </div>
               </td>
             </tr>
-            <tr v-if="!orders.length">
-              <td colspan="6" class="loading-text">Chưa có đơn hàng nào.</td>
+            <tr v-if="!filteredOrders.length">
+              <td colspan="6" class="loading-text">
+                {{ activeStatus === 'All' ? 'Chưa có đơn hàng nào.' : `Không có đơn hàng "${labelOf(activeStatus)}".` }}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -147,7 +160,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { orderApi } from '../services/api.js'
+import { orderApi } from '../../services/api.js'
 
 const orders     = ref([])
 const loading    = ref(true)
@@ -159,7 +172,12 @@ const cError     = ref('')
 // ✅ Lấy thông tin user từ localStorage
 const user    = JSON.parse(localStorage.getItem('user') || '{}')
 const isAdmin = computed(() => user.role === 'Admin')
+const activeStatus = ref('All')
 
+const filteredOrders = computed(() => {
+  if (activeStatus.value === 'All') return orders.value
+  return orders.value.filter(o => o.status === activeStatus.value)
+})
 // ✅ userId tự động từ token — User không cần nhập tay
 const cForm = ref({ userId: user.id ?? '', total: 0 })
 

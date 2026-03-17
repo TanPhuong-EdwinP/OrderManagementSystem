@@ -176,17 +176,25 @@ const regForm = ref({
 
 function saveSession(data){
 
-  localStorage.setItem('token',data.token)
+  localStorage.setItem('token', data.token)
 
   localStorage.setItem('user',
     JSON.stringify({
-      id:data.id,
-      email:data.email,
-      role:data.role
+      id:       data.id,
+      email:    data.email,
+      role:     data.role,
+      fullName: data.fullName || '',
+      phone:    data.phone    || '',
+      address:  data.address  || ''
     })
   )
 
-  router.push('/home')
+  // Redirect đúng theo role — tránh bị router guard chặn trắng trang
+  if (data.role === 'Admin') {
+    router.push('/admin')
+  } else {
+    router.push('/home')
+  }
 }
 
 

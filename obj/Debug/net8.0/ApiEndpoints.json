@@ -284,6 +284,26 @@
   },
   {
     "ContainingType": "Order_Management_System.Controllers.UserController",
+    "Method": "GetAllUsers",
+    "RelativePath": "api/users",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Order_Management_System.Controllers.UserController",
+    "Method": "GetAllAdmins",
+    "RelativePath": "api/users/admins",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Order_Management_System.Controllers.UserController",
     "Method": "GetProfile",
     "RelativePath": "api/users/profile",
     "HttpMethod": "GET",

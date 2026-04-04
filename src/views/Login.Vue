@@ -174,11 +174,9 @@ const regForm = ref({
 })
 
 
-function saveSession(data){
-
-  localStorage.setItem('token', data.token)
-
-  localStorage.setItem('user',
+function saveSession(data) {
+  sessionStorage.setItem('token', data.token)
+  sessionStorage.setItem('user',
     JSON.stringify({
       id:       data.id,
       email:    data.email,
@@ -189,7 +187,6 @@ function saveSession(data){
     })
   )
 
-  // Redirect đúng theo role — tránh bị router guard chặn trắng trang
   if (data.role === 'Admin') {
     router.push('/admin')
   } else {

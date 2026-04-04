@@ -115,7 +115,7 @@ const loading = ref(true)
 const submitting    = ref(false)
 const checkoutError = ref('')
 
-const user = JSON.parse(localStorage.getItem('user') || '{}')
+const user = JSON.parse(sessionStorage.getItem('user') || '{}')
 
 const shipping = ref({
   name:    user.fullName || '',

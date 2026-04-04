@@ -169,8 +169,8 @@ const detail     = ref(null)
 const submitting = ref(false)
 const cError     = ref('')
 
-// ✅ Lấy thông tin user từ localStorage
-const user    = JSON.parse(localStorage.getItem('user') || '{}')
+// ✅ Lấy thông tin user từ sessionStorage
+const user = JSON.parse(sessionStorage.getItem('user') || '{}')
 const isAdmin = computed(() => user.role === 'Admin')
 const activeStatus = ref('All')
 

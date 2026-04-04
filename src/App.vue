@@ -49,8 +49,8 @@ import { cartApi } from './services/api.js'
 const router = useRouter()
 const route  = useRoute()
 
-const isLoggedIn = computed(() => { route.path; return !!localStorage.getItem('token') })
-const user       = computed(() => { route.path; return JSON.parse(localStorage.getItem('user') || '{}') })
+const isLoggedIn = computed(() => { route.path; return !!sessionStorage.getItem('token') })
+const user       = computed(() => { route.path; return JSON.parse(sessionStorage.getItem('user') || '{}') })
 const isAdmin    = computed(() => user.value?.role === 'Admin')
 const cartCount  = ref(0)
 
@@ -65,8 +65,8 @@ async function loadCartCount() {
 watch(isLoggedIn, (val) => { if (val && !isAdmin.value) loadCartCount() }, { immediate: true })
 
 function logout() {
-  localStorage.removeItem('token')
-  localStorage.removeItem('user')
+  sessionStorage.removeItem('token')
+  sessionStorage.removeItem('user')
   router.push('/login')
 }
 </script>

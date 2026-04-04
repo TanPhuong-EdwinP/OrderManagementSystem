@@ -86,7 +86,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { userApi } from '../../services/api.js'
 
-const user    = computed(() => JSON.parse(localStorage.getItem('user') || '{}'))
+const user    = computed(() => JSON.parse(sessionStorage.getItem('user') || '{}'))
 const tab     = ref('info')
 const loading = ref(true)
 const saving  = ref(false)
@@ -114,12 +114,12 @@ async function handleSave() {
   saveMsg.value = ''
   try {
     const { data } = await userApi.updateProfile(form.value)
-    // Cập nhật localStorage
-    const u = JSON.parse(localStorage.getItem('user') || '{}')
+    // Cập nhật sessionStorage
+    const u = JSON.parse(sessionStorage.getItem('user') || '{}')
     u.fullName = data.fullName
     u.phone    = data.phone
     u.address  = data.address
-    localStorage.setItem('user', JSON.stringify(u))
+    sessionStorage.setItem('user', JSON.stringify(u))
 
     saveMsg.value = 'Cập nhật thông tin thành công!'
     saveOk.value  = true

@@ -111,7 +111,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { orderApi, cartApi } from '../../services/api.js'
 
-const user    = computed(() => JSON.parse(localStorage.getItem('user') || '{}'))
+const user    = computed(() => JSON.parse(sessionStorage.getItem('user') || '{}'))
 const loading = ref(true)
 const recentOrders = ref([])
 const stats = ref({ total: 0, pending: 0, delivered: 0, cart: 0 })

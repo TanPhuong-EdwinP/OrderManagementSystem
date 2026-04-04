@@ -100,7 +100,7 @@ const editingId  = ref(null)
 const submitting = ref(false)
 const formError  = ref('')
 
-const user    = JSON.parse(localStorage.getItem('user') || '{}')
+const user    = JSON.parse(sessionStorage.getItem('user') || '{}')
 const isAdmin = computed(() => user.role === 'Admin')
 
 const blank = () => ({ name: '', price: 0, stock: 0, categoryId: '' })

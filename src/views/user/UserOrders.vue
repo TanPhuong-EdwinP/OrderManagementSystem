@@ -2,6 +2,7 @@
   <div class="container">
     <div class="page-header">
       <h1>📋 Lịch sử đơn hàng</h1>
+      <button class="btn btn-secondary" @click="load">🔄 Làm mới</button>
     </div>
 
     <div v-if="loading" class="loading-text">Đang tải…</div>
@@ -71,7 +72,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { orderApi } from '../../services/api.js'
 
 const orders    = ref([])
@@ -123,8 +124,12 @@ async function cancelOrder(id) {
 
 const fmt     = v => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v)
 const fmtDate = d => { if (!d) return '—'; const dt = new Date(d); return isNaN(dt) ? '—' : dt.toLocaleDateString('vi-VN') }
-
-onMounted(load)
+let timer
+onMounted(() => {
+  load()
+  timer = setInterval(load, 30000)
+})
+onUnmounted(() => clearInterval(timer))
 </script>
 
 <style scoped>

@@ -198,7 +198,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { productApi, orderApi, reportApi } from '../services/api.js'
 
-const user    = computed(() => JSON.parse(localStorage.getItem('user') || '{}'))
+const user    = computed(() => JSON.parse(sessionStorage.getItem('user') || '{}'))
 const isAdmin = computed(() => user.value?.role === 'Admin')
 
 const loadingOrders = ref(true)
